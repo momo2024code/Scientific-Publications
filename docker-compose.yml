@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./AcademicHub-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./AcademicHub-backend/publications.json:/usr/src/app/publications.json
+    environment:
+      - NODE_ENV=production
+    container_name: academic-hub-backend
+    networks:
+      - academic-network
+
+  frontend:
+    build:
+      context: ./AcademicHub-Frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    depends_on:
+      - backend
+    container_name: academic-hub-frontend
+    networks:
+      - academic-network
+    environment:
+      - API_URL=http://backend:5000  # For container-to-container communication
+
+networks:
+  academic-network:
+    driver: bridge
