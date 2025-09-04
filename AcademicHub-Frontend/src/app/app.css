@@ -1,0 +1,23 @@
+/* Make sure html and body take full height */
+html, body {
+  height: 100%;
+  margin: 0!important;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+}
+
+
+/* Main content grows to fill available space */
+main.main-content {
+  flex: 1;                   /* Take remaining vertical space */
+  min-height: 60vh;          /* Minimum height 60% of viewport height */
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Footer styles */
+footer {
+  background-color: #004080;
+  color: white;
+  text-align: center;
+}

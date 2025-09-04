@@ -1,0 +1,24 @@
+<div *ngIf="publication; else errorBlock" class="publication-detail-container">
+    <h1 class="title">{{ publication.entryTags.title }}</h1>
+
+    <div class="meta-info">
+        <p><strong>Author(s):</strong> {{ publication.entryTags.author }}</p>
+        <p><strong>Year:</strong> {{ publication.entryTags.year }}</p>
+        <p>
+            <strong>Journal / Publisher:</strong>
+            {{ publication.entryTags.journal || publication.entryTags.publisher || 'N/A' }}
+        </p>
+        <p *ngIf="publication.entryTags.tags"><strong>Tags:</strong> {{ publication.entryTags.tags }}</p>
+    </div>
+
+    <div class="actions">
+        <a routerLink="/publications" class="back-link">← Back to publications</a>
+    </div>
+</div>
+
+<ng-template #errorBlock>
+    <div class="error-message">
+        <p>{{ errorMessage }}</p>
+        <a routerLink="/publications" class="back-link">← Back to publications</a>
+    </div>
+</ng-template>

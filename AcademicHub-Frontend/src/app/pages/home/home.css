@@ -1,0 +1,75 @@
+.task-info {
+  background-color: #f0f4ff;
+  padding: 2.5rem 1.5rem;
+  margin: 2.5rem auto;
+  max-width: 800px;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.task-info h2 {
+  color: #004080;
+  margin-bottom: 1.25rem;
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+.task-info p {
+  font-size: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.task-info h3 {
+  color: #004080;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.task-info ul {
+  padding-left: 1.5rem;
+  color: #444;
+  font-size: 1rem;
+}
+
+.task-info ul li {
+  margin-bottom: 0.65rem;
+}
+
+.task-info code {
+  background-color: #d7e0ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #003366;
+  font-weight: 600;
+}
+
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  .task-info {
+    padding: 1.5rem 1rem;
+    margin: 1.5rem 1rem;
+    max-width: 100%;
+  }
+
+  .task-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .task-info p,
+  .task-info ul {
+    font-size: 1rem;
+  }
+
+  .task-info h3 {
+    font-size: 1.1rem;
+  }
+
+  .task-info ul {
+    padding-left: 1rem;
+  }
+}

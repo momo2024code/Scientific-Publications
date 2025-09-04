@@ -1,0 +1,27 @@
+<div class="filters-container">
+
+  <input
+    type="text"
+    placeholder="Search publications by keyword..."
+    [(ngModel)]="searchTerm"
+    (input)="onSearchTermChange()"
+    aria-label="Search publications"
+  />
+
+  <select [(ngModel)]="selectedYear" (change)="onYearChange()" aria-label="Filter by year">
+    <option value="">All years</option>
+    <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+  </select>
+
+</div>
+
+<div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+<ul class="publications-list">
+    <li *ngFor="let pub of filteredPublications">
+        <a [routerLink]="['/publications', pub.citationKey]">
+            <strong>{{ pub.entryTags.title }}</strong> — {{ pub.entryTags.author }} ({{ pub.entryTags.year }}).
+            <em>{{ pub.entryTags.journal || pub.entryTags.publisher || '' }}</em>.
+        </a>
+    </li>
+</ul>

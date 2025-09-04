@@ -1,0 +1,37 @@
+<div class="bibtex-uploader">
+  <h2>Upload Your .bib File</h2>
+  <p>Select a BibTeX (.bib) file to upload multiple publications at once.</p>
+
+  <div class="file-upload-wrapper">
+    <label for="file-upload" class="file-upload-label">
+      Choose .bib file to upload
+    </label>
+    <input
+      id="file-upload"
+      type="file"
+      (change)="onFileSelected($event)"
+      accept=".bib"
+    />
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="error-message" role="alert">{{ error }}</div>
+
+  <!-- Upload status messages -->
+  <ul *ngIf="messages.length" class="message-list" role="alert" aria-live="polite">
+    <li *ngFor="let msg of messages" class="message-item">{{ msg }}</li>
+  </ul>
+
+  <!-- List of parsed publications -->
+  <div *ngIf="publications.length" class="publications-section">
+    <h3>Parsed Publications</h3>
+    <ul class="publications-list">
+      <li *ngFor="let pub of publications" class="publication-item">
+        <strong class="pub-title">{{ pub.entryTags['title'] }}</strong> —
+        <span class="pub-author">{{ pub.entryTags['author'] }}</span> (
+        <span class="pub-year">{{ pub.entryTags['year'] }}</span> ).
+        <em class="pub-journal">{{ pub.entryTags['journal'] }}</em>.
+      </li>
+    </ul>
+  </div>
+</div>
