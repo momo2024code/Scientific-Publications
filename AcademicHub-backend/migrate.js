@@ -1,0 +1,111 @@
+const db = require('./db'); // make sure db.js is correctly configured
+
+const publications = [
+  {
+    citationKey: "savage2024_bayesian",
+    entryType: "article",
+    entryTags: {
+      author: "Dr. Tom Savage, Dr. Ehecatl Antonio del Rio Chanona",
+      year: "2024",
+      title: "Human-Algorithm Collaborative Bayesian Optimization for Engineering Systems",
+      journal: "arXiv",
+      publisher: "",
+      tags: "bayesian optimization, engineering systems"
+    }
+  },
+  {
+    citationKey: "zhu2024_experimental",
+    entryType: "article",
+    entryTags: {
+      author: "Mengjia Zhu, Austin Mroz, Lingfeng Gui, Kim Jelfs, Alberto Bemporad, Dr. Ehecatl Antonio del Rio Chanona, Ye Seol Lee",
+      year: "2023",
+      title: "Discrete and mixed-variable experimental design with surrogate-based approach",
+      journal: "ChemRxiv",
+      publisher: "",
+      tags: "experimental design, surrogate models"
+    }
+  },
+  {
+    citationKey: "ahmed2024_arrtoc",
+    entryType: "article",
+    entryTags: {
+      author: "Dr. Akhil Ahmed, Dr. Ehecatl Antonio del Rio Chanona, Mehmet Mercangoz",
+      year: "2024",
+      title: "ARRTOC: Adversarially Robust Real-Time Optimization and Control",
+      journal: "arXiv",
+      publisher: "",
+      tags: "real-time optimization, adversarial robustness"
+    }
+  },
+  {
+    citationKey: "daoutidis2024_ml_process",
+    entryType: "article",
+    entryTags: {
+      author: "Prodromos Daoutidis, Jay H. Lee, Srinivas Rangarajan, Leo Chiang, Bhushan Gopaluni, Artur M. Schweidtmann, Iiro Harjunkoski, Mehmet Mercangoz, Ali Mesbah, Fani Boukouvala, Fernando V. Lima, Dr. Ehecatl Antonio del Rio Chanona, Christos Georgakis",
+      year: "2024",
+      title: "Machine learning in process systems engineering: Challenges and opportunities",
+      journal: "Computers & Chemical Engineering",
+      publisher: "Elsevier",
+      tags: "machine learning, process systems engineering"
+    }
+  },
+  {
+    citationKey: "servia2024_kinetic_models",
+    entryType: "article",
+    entryTags: {
+      author: "Miguel Ángel de Carvalho Servia, Ilya Orson Sandoval, King Kuok (Mimi) Hii, Klaus Hellgardt, Dongda Zhang, Dr. Ehecatl Antonio del Rio Chanona",
+      year: "2024",
+      title: "The automated discovery of kinetic rate models – methodological frameworks",
+      journal: "Digital Discovery",
+      publisher: "",
+      tags: "kinetic models, discovery, digital chemistry"
+    }
+  },
+  {
+    citationKey: "zhu2023_experimental",
+    entryType: "article",
+    entryTags: {
+      author: "Mengjia Zhu and Austin Mroz and Lingfeng Gui and Kim Jelfs and Alberto Bemporad and Dr. Ehecatl Antonio del Rio Chanona and Ye Seol Lee",
+      year: "2023",
+      title: "Discrete and mixed-variable experimental design with surrogate-based approach",
+      journal: "ChemRxiv",
+      publisher: "",
+      tags: "experimental design, surrogate models"
+    }
+  }
+];
+
+async function migrate() {
+  try {
+    // 1️⃣ Create table if it doesn't exist
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS publications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        citationKey VARCHAR(255) NOT NULL UNIQUE,
+        entryType VARCHAR(50),
+        entryTags JSON
+      );
+    `);
+
+    console.log('Table publications is ready');
+
+    // 2️⃣ Insert publications safely (ignore duplicates)
+    for (const pub of publications) {
+      await db.query(
+        `INSERT INTO publications (citationKey, entryType, entryTags)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE entryType=VALUES(entryType), entryTags=VALUES(entryTags)`,
+        [pub.citationKey, pub.entryType, JSON.stringify(pub.entryTags)]
+      );
+      console.log(`Inserted/Updated: ${pub.citationKey}`);
+    }
+
+    console.log('Migration complete ✅');
+    process.exit(0);
+  } catch (err) {
+    console.error('Migration error:', err);
+    process.exit(1);
+  }
+}
+
+migrate();

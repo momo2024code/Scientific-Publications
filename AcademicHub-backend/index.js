@@ -1,28 +1,15 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const cors = require('cors');
+const db = require('./db'); // Make sure this exports a MySQL2 promise pool
 
 const app = express();
 const PORT = 5000;
-const dataFilePath = path.join(__dirname, 'publications.json');
 
 // Middleware
 app.use(cors());
 app.use(express.json()); // Parse JSON body
-
-// Read publications from file
-function readPublications() {
-  const jsonData = fs.readFileSync(dataFilePath, 'utf8');
-  return JSON.parse(jsonData);
-}
-
-// Save publications to file
-function savePublications(publications) {
-  fs.writeFileSync(dataFilePath, JSON.stringify(publications, null, 2), 'utf8');
-}
 
 // Swagger setup
 const options = {
@@ -33,15 +20,10 @@ const options = {
       version: '1.0.0',
       description: 'API for managing academic publications',
     },
-    servers: [
-      {
-        url: `http://localhost:${PORT}`,
-      },
-    ],
+    servers: [{ url: `http://localhost:${PORT}` }],
   },
-  apis: [__filename], // Use current file for swagger docs
+  apis: [__filename],
 };
-
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
@@ -59,7 +41,49 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *               type: array
  *               items:
  *                 type: object
- *
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   citationKey:
+ *                     type: string
+ *                     example: "savage2024_bayesian"
+ *                   entryType:
+ *                     type: string
+ *                     example: "article"
+ *                   entryTags:
+ *                     type: object
+ *                     properties:
+ *                       author:
+ *                         type: string
+ *                       year:
+ *                         type: string
+ *                       title:
+ *                         type: string
+ *                       journal:
+ *                         type: string
+ *                       publisher:
+ *                         type: string
+ *                       tags:
+ *                         type: string
+ */
+app.get('/api/publications', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM publications');
+const publications = rows.map(row => ({
+  ...row,
+  entryTags: typeof row.entryTags === 'string' ? JSON.parse(row.entryTags) : row.entryTags
+}));
+    res.json(publications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/publications:
  *   post:
  *     summary: Add a new publication
  *     requestBody:
@@ -75,10 +99,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *                 type: string
  *               entryTags:
  *                 type: object
- *             required:
- *               - citationKey
- *               - entryType
- *               - entryTags
  *     responses:
  *       201:
  *         description: Publication added successfully
@@ -87,87 +107,27 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *       409:
  *         description: Duplicate citationKey
  */
-app.get('/api/publications', (req, res) => {
-  const publications = readPublications();
-  res.json(publications);
-});
-
-app.post('/api/publications', (req, res) => {
-  const newPublication = req.body;
-
-  if (
-    !newPublication.citationKey ||
-    !newPublication.entryType ||
-    !newPublication.entryTags
-  ) {
+app.post('/api/publications', async (req, res) => {
+  const { citationKey, entryType, entryTags } = req.body;
+  if (!citationKey || !entryType || !entryTags) {
     return res.status(400).json({ error: 'Invalid publication format' });
   }
 
   try {
-    const publications = readPublications();
-
-    const exists = publications.some(pub => pub.citationKey === newPublication.citationKey);
-    if (exists) {
-      return res.status(409).json({ error: 'Publication with this citationKey already exists' });
-    }
-
-    publications.push(newPublication);
-    savePublications(publications);
-
+    await db.query(
+      'INSERT INTO publications (citationKey, entryType, entryTags) VALUES (?, ?, ?)',
+      [citationKey, entryType, JSON.stringify(entryTags)]
+    );
     res.status(201).json({ message: 'Publication added successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to save publication' });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(409).json({ error: 'Publication with this citationKey already exists' });
+    } else {
+      console.error(err);
+      res.status(500).json({ error: 'Database error' });
+    }
   }
 });
-
-/**
- * @swagger
- * /api/publications/year/{year}:
- *   get:
- *     summary: Get publications by year
- *     parameters:
- *       - in: path
- *         name: year
- *         schema:
- *           type: string
- *         required: true
- *         description: Year to filter publications by
- *     responses:
- *       200:
- *         description: Filtered publications by year
- */
-app.get('/api/publications/year/:year', (req, res) => {
-  const year = req.params.year;
-  const publications = readPublications();
-  const filtered = publications.filter(pub => pub.entryTags.year === year);
-  res.json(filtered);
-});
-
-/**
- * @swagger
- * /api/publications/search/{keyword}:
- *   get:
- *     summary: Search publications by keyword
- *     parameters:
- *       - in: path
- *         name: keyword
- *         schema:
- *           type: string
- *         required: true
- *         description: Keyword to search in publications
- *     responses:
- *       200:
- *         description: Filtered publications by keyword
- */
-app.get('/api/publications/search/:keyword', (req, res) => {
-  const keyword = req.params.keyword.toLowerCase();
-  const publications = readPublications();
-  const filtered = publications.filter(pub =>
-    JSON.stringify(pub).toLowerCase().includes(keyword)
-  );
-  res.json(filtered);
-});
-
 
 /**
  * @swagger
@@ -180,25 +140,91 @@ app.get('/api/publications/search/:keyword', (req, res) => {
  *         schema:
  *           type: string
  *         required: true
- *         description: Citation key of the publication
  *     responses:
  *       200:
  *         description: A single publication
- *       404:
- *         description: Publication not found
  */
-app.get('/api/publications/:citationKey', (req, res) => {
+app.get('/api/publications/:citationKey', async (req, res) => {
   const { citationKey } = req.params;
-  const publications = readPublications();
-  const publication = publications.find(pub => pub.citationKey === citationKey);
+  try {
+    const [rows] = await db.query('SELECT * FROM publications WHERE citationKey = ?', [citationKey]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Publication not found' });
 
-  if (publication) {
-    res.json(publication);
-  } else {
-    res.status(404).json({ error: 'Publication not found' });
+    res.json({
+      ...rows[0],
+      entryTags: typeof rows[0].entryTags === 'string' ? JSON.parse(rows[0].entryTags) : rows[0].entryTags
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
+
+/**
+ * @swagger
+ * /api/publications/year/{year}:
+ *   get:
+ *     summary: Get publications by year
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: List of publications for the year
+ */
+app.get('/api/publications/year/:year', async (req, res) => {
+  const year = req.params.year;
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM publications WHERE JSON_UNQUOTE(JSON_EXTRACT(entryTags, "$.year")) = ?',
+      [year]
+    );
+const publications = rows.map(row => ({
+  ...row,
+  entryTags: typeof row.entryTags === 'string' ? JSON.parse(row.entryTags) : row.entryTags
+}));
+    res.json(publications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/publications/search/{keyword}:
+ *   get:
+ *     summary: Search publications by keyword in title
+ *     parameters:
+ *       - in: path
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: List of publications matching keyword
+ */
+app.get('/api/publications/search/:keyword', async (req, res) => {
+  const keyword = `%${req.params.keyword.toLowerCase()}%`;
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM publications WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(entryTags, "$.title"))) LIKE ?',
+      [keyword]
+    );
+const publications = rows.map(row => ({
+  ...row,
+  entryTags: typeof row.entryTags === 'string' ? JSON.parse(row.entryTags) : row.entryTags
+}));    res.json(publications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
 
 // 404 handler
 app.use((req, res) => {
