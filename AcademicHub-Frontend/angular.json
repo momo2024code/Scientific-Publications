@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "opcua-dashboard": {
+    "AcademicHub": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -48,8 +48,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "50kB",
-                  "maximumError": "100kB"
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
                 }
               ],
               "outputHashing": "all"
@@ -66,10 +66,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "opcua-dashboard:build:production"
+              "buildTarget": "AcademicHub:build:production"
             },
             "development": {
-              "buildTarget": "opcua-dashboard:build:development"
+              "buildTarget": "AcademicHub:build:development"
             }
           },
           "defaultConfiguration": "development"
